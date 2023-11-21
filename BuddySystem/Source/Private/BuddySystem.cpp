@@ -12,12 +12,25 @@ namespace
 	}
 }
 
-void BuddySystem::Initialize( size_t size, size_t minBlockSize ) noexcept
+bool BuddySystem::Initialize( size_t size, size_t minBlockSize ) noexcept
 {
-	assert( size >= minBlockSize );
+	if ( size == 0 || minBlockSize == 0 )
+	{
+		return false;
+	}
 
 	m_size = GetNearestPowerOfTwo( size );
+	if ( m_size > size )
+	{
+		m_size >>= 1;
+	}
+
 	m_minBlockSize = GetNearestPowerOfTwo( minBlockSize );
+
+	if ( m_size < m_minBlockSize )
+	{
+		return false;
+	}
 
 	m_numLevel = std::log2( m_size / m_minBlockSize ) + 1;
 
@@ -30,6 +43,8 @@ void BuddySystem::Initialize( size_t size, size_t minBlockSize ) noexcept
 	m_freeFlags.back()[0] = true;
 
 	m_usedBlockLevels.resize( m_size / m_minBlockSize, -1 );
+
+	return true;
 }
 
 std::optional<size_t> BuddySystem::Allocate( size_t size )
@@ -82,6 +97,11 @@ void BuddySystem::Deallocate( size_t offset )
 
 	SetBlockState( level, blockIndex, true );
 	MergeBlcok( blockIndex, level );
+}
+
+size_t BuddySystem::Capacity() const
+{
+	return m_size;
 }
 
 size_t BuddySystem::GetSuitableBlockSize( size_t size ) const noexcept

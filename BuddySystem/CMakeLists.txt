@@ -5,10 +5,10 @@ set(HEADER
 
 set (SOURCE
 	"./Source/Private/BuddySystem.cpp"
-	"./Source/Private/Main.cpp"
 )
 
-add_executable(buddy_system ${HEADER} ${SOURCE})
+add_library(buddy_system STATIC ${HEADER}
+								${SOURCE})
 
 target_include_directories(buddy_system
 PUBLIC

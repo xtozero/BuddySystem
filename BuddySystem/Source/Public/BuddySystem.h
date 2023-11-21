@@ -1,4 +1,5 @@
 #pragma once
+
 #include "SizedTypes.h"
 
 #include <optional>
@@ -7,10 +8,19 @@
 class BuddySystem final
 {
 public:
-	void Initialize( size_t size, size_t minBlockSize ) noexcept;
+	bool Initialize( size_t size, size_t minBlockSize ) noexcept;
 
 	[[nodiscard]] std::optional<size_t> Allocate( size_t size );
 	void Deallocate( size_t offset );
+
+	size_t Capacity() const;
+
+#ifdef DoUnitTest
+	size_t MinimumAllocSize() const
+	{
+		return m_minBlockSize;
+	}
+#endif
 
 private:
 	size_t GetSuitableBlockSize( size_t size ) const noexcept;
