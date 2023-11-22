@@ -14,6 +14,8 @@ public:
 	void Deallocate( size_t offset );
 
 	size_t Capacity() const;
+	size_t UsedSize() const;
+	size_t AvailableSize() const;
 
 #ifdef DoUnitTest
 	size_t MinimumAllocSize() const
@@ -33,6 +35,8 @@ private:
 
 	size_t m_size = 0;
 	size_t m_minBlockSize = 0;
+
+	size_t m_usedSize = 0;
 
 	uint32 m_numLevel = 0;
 

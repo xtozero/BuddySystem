@@ -76,6 +76,7 @@ std::optional<size_t> BuddySystem::Allocate( size_t size )
 	size_t blockSize = m_minBlockSize << level;
 	size_t offset = blockIdx.value() * blockSize;
 
+	m_usedSize += blockSize;
 	m_usedBlockLevels[offset / m_minBlockSize] = level;
 
 	return offset;
@@ -98,11 +99,23 @@ void BuddySystem::Deallocate( size_t offset )
 
 	SetBlockState( level, blockIndex, true );
 	MergeBlcok( blockIndex, level );
+
+	m_usedSize -= blockSize;
 }
 
 size_t BuddySystem::Capacity() const
 {
 	return m_size;
+}
+
+size_t BuddySystem::UsedSize() const
+{
+	return m_usedSize;
+}
+
+size_t BuddySystem::AvailableSize() const
+{
+	return Capacity() - UsedSize();
 }
 
 size_t BuddySystem::GetSuitableBlockSize( size_t size ) const noexcept
