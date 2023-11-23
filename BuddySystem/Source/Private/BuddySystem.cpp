@@ -35,13 +35,8 @@ bool BuddySystem::Initialize( size_t size, size_t minBlockSize ) noexcept
 
 	m_numLevel = std::log2( m_size / m_minBlockSize ) + 1;
 
-	m_freeFlags.resize( m_numLevel );
-	for ( BitArray& freeFlag : m_freeFlags )
-	{
-		freeFlag.resize( m_size / m_minBlockSize );
-	}
-
-	m_freeFlags.back()[0] = true;
+	m_freeFlags.resize( static_cast<size_t>( 1 ) << m_numLevel );
+	m_freeFlags[1] = true;
 
 	m_usedBlockLevels.resize( m_size / m_minBlockSize, -1 );
 
@@ -103,17 +98,17 @@ void BuddySystem::Deallocate( size_t offset )
 	m_usedSize -= blockSize;
 }
 
-size_t BuddySystem::Capacity() const
+size_t BuddySystem::Capacity() const noexcept
 {
 	return m_size;
 }
 
-size_t BuddySystem::UsedSize() const
+size_t BuddySystem::UsedSize() const noexcept
 {
 	return m_usedSize;
 }
 
-size_t BuddySystem::AvailableSize() const
+size_t BuddySystem::AvailableSize() const noexcept
 {
 	return Capacity() - UsedSize();
 }
@@ -130,14 +125,19 @@ uint32 BuddySystem::GetLevel( size_t size ) const noexcept
 	return std::log2( size / m_minBlockSize );
 }
 
+size_t BuddySystem::GetBlockStateOffset( uint32 level ) const noexcept
+{
+	return static_cast<size_t>( 1 ) << ( m_numLevel - level - 1 );
+}
+
 std::optional<size_t> BuddySystem::GetFreeBlock( uint32 level ) const noexcept
 {
-	const BitArray& freeFlag = m_freeFlags[level];
+	size_t offset = GetBlockStateOffset( level );
 	size_t numBlock = ( m_size / m_minBlockSize ) >> level;
 
 	for ( size_t i = 0; i < numBlock; ++i )
 	{
-		if ( freeFlag[i] )
+		if ( m_freeFlags[offset + i] )
 		{
 			return i;
 		}
@@ -146,9 +146,14 @@ std::optional<size_t> BuddySystem::GetFreeBlock( uint32 level ) const noexcept
 	return {};
 }
 
+bool BuddySystem::GetBlockState( uint32 level, size_t blockIndex ) const noexcept
+{
+	return m_freeFlags[GetBlockStateOffset( level ) + blockIndex];
+}
+
 void BuddySystem::SetBlockState( uint32 level, size_t blockIndex, bool isFree ) noexcept
 {
-	m_freeFlags[level][blockIndex] = isFree;
+	m_freeFlags[GetBlockStateOffset( level ) + blockIndex] = isFree;
 }
 
 size_t BuddySystem::SplitBlock( uint32 srcLevel, uint32 destLevel, size_t srcIndex ) noexcept
@@ -176,8 +181,8 @@ void BuddySystem::MergeBlcok( size_t blockIndex, uint32 level ) noexcept
 		size_t leftIndex = parentIndex * 2;
 		size_t rightIndex = leftIndex + 1;
 
-		if ( ( m_freeFlags[childLevel][leftIndex] == false )
-			|| ( m_freeFlags[childLevel][rightIndex] == false ) )
+		if ( ( GetBlockState( childLevel, leftIndex ) == false )
+			|| ( GetBlockState( childLevel, rightIndex ) == false ) )
 		{
 			break;
 		}
